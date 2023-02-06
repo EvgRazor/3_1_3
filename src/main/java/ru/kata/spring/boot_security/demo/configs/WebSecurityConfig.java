@@ -2,27 +2,34 @@ package ru.kata.spring.boot_security.demo.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import ru.kata.spring.boot_security.demo.service.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    private final SuccessUserHandler successUserHandler;
 
-    public WebSecurityConfig(SuccessUserHandler successUserHandler) {
+    private final SuccessUserHandler successUserHandler;
+    private final UserDetailsServiceImpl userDetailsService;
+
+    public WebSecurityConfig(SuccessUserHandler successUserHandler, UserDetailsServiceImpl userDetailsService) {
         this.successUserHandler = successUserHandler;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests()
+        http.authorizeRequests()
+                .antMatchers("/admin/**").hasRole("ADMIN")
+                .antMatchers("/user/").hasAnyRole("ADMIN", "USER")
                 .antMatchers("/", "/index").permitAll()
                 .anyRequest().authenticated()
                 .and()
@@ -33,17 +40,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll();
     }
 
-    // аутентификация inMemory
-    @Bean
-    @Override
-    public UserDetailsService userDetailsService() {
-        UserDetails user =
-                User.withDefaultPasswordEncoder()
-                        .username("user")
-                        .password("user")
-                        .roles("USER")
-                        .build();
+    // аутентификация DaoAuthenticationProvider
 
-        return new InMemoryUserDetailsManager(user);
+    @Bean
+    public PasswordEncoder passwordEncoder () {
+        return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider () {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder());
+        provider.setUserDetailsService(userDetailsService);
+        return provider;
+    }
+
+
+
 }
