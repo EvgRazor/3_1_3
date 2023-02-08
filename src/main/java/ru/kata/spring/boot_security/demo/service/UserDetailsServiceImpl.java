@@ -1,33 +1,36 @@
 package ru.kata.spring.boot_security.demo.service;
 
+import org.hibernate.Hibernate;
+
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.model.User;
-import ru.kata.spring.boot_security.demo.repository.UserRepositoryIml;
-import ru.kata.spring.boot_security.demo.security.UserDetailsWrapperImpl;
+
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UserRepositoryIml userRepositoryIml;
+    private  UserService userService;
 
-    public UserDetailsServiceImpl(UserRepositoryIml userRepositoryIml) {
-        this.userRepositoryIml = userRepositoryIml;
+    public UserDetailsServiceImpl(@Lazy UserService userService) {
+        this.userService = userService;
     }
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepositoryIml.findByName(username);
+        User user = userService.getUserNameSc(username);
+
+
         if (user == null)
             throw new BadCredentialsException("Нет такого пользователя :(");
-        return new UserDetailsWrapperImpl(user);
+        Hibernate.initialize(user.getRoleSet());
+        return new User(user);
     }
 
 }

@@ -1,18 +1,26 @@
 package ru.kata.spring.boot_security.demo.model;
 
+
+import org.hibernate.annotations.Fetch;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
+import java.util.Collection;
 import java.util.Set;
 
 import static javax.persistence.CascadeType.DETACH;
 import static javax.persistence.CascadeType.PERSIST;
 
+
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements UserDetails {
 
     @Id
     @Column(name = "id")
@@ -36,26 +44,35 @@ public class User {
     @Column(name = "password")
     @NotEmpty(message = "Пароль не может быть пустым")
     @Size(min = 1, max = 100, message = "Минимум 1 символа, максимум 100")
-    private String password;
+    private String pass;
 
-    @ManyToMany(cascade = {PERSIST, DETACH}, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = {PERSIST, DETACH}, fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn (name = "role_id")
     )
+
     @NotEmpty(message = "Роль не может быть пустой")
     private Set<Role> roleSet;
 
+    @Transient
+    private User user;
+
     public User() {
+
     }
 
-    public User(int id, String name, String email, int age, String password, Set<Role> roleSet) {
+    public User( User user) {
+        this.user = user;
+    }
+
+    public User(int id, String name, String email, int age, String pass, Set<Role> roleSet) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.age = age;
-        this.password = password;
+        this.pass = pass;
         this.roleSet = roleSet;
     }
 
@@ -91,12 +108,12 @@ public class User {
         this.age = age;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPass() {
+        return pass;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPass(String pass) {
+        this.pass = pass;
     }
 
     public Set<Role> getRoleSet() {
@@ -114,9 +131,52 @@ public class User {
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 ", age=" + age +
-                ", password='" + password + '\'' +
+                ", pass='" + pass + '\'' +
                 ", roleSet=" + roleSet +
                 '}';
     }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getUser().getRoleSet().stream().map(role -> new SimpleGrantedAuthority(new Role(role).getAuthority())).toList();
+    }
+
+    @Override
+    public String getPassword() {
+        return getUser().getPass();
+    }
+
+    @Override
+    public String getUsername() {
+        return getUser().getName();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
 }
 

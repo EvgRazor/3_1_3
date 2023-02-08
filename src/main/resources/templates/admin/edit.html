@@ -22,9 +22,9 @@
   <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" > Error email</p>
   <br>
 
-  <label for="password"> Password: </label>
-  <input type="password" th:field="*{password}" id="password"><br>
-  <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" > Error password</p>
+  <label for="pass"> Password: </label>
+  <input type="password" th:field="*{pass}" id="pass"><br>
+  <p th:if="${#fields.hasErrors('pass')}" th:errors="*{pass}" > Error password</p>
   <br>
 
   <th:block th:each="role : ${_roleSet}">

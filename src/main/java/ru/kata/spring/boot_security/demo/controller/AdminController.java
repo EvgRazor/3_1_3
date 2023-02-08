@@ -1,16 +1,14 @@
 package ru.kata.spring.boot_security.demo.controller;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
-import ru.kata.spring.boot_security.demo.repository.RoleRepositoryImpl;
-import ru.kata.spring.boot_security.demo.service.UserServiceImpl;
+import ru.kata.spring.boot_security.demo.service.RoleService;
+import ru.kata.spring.boot_security.demo.service.UserService;
 import ru.kata.spring.boot_security.demo.util.UserValidator;
-
 import javax.validation.Valid;
 import java.util.Collection;
 
@@ -18,14 +16,15 @@ import java.util.Collection;
 @RequestMapping("/admin")
 public class AdminController {
 
-    private final RoleRepositoryImpl roleRepository;
-    private final UserServiceImpl userService;
+    private final RoleService roleService;
     private final UserValidator userValidator;
+    private final UserService userService ;
 
-    public AdminController(RoleRepositoryImpl roleRepository, UserServiceImpl userService, PasswordEncoder passwordEncoder, UserValidator userValidator) {
-        this.roleRepository = roleRepository;
-        this.userService = userService;
+
+    public AdminController(RoleService roleService, UserValidator userValidator, UserService userService) {
+        this.roleService = roleService;
         this.userValidator = userValidator;
+        this.userService = userService;
     }
 
     // Get all User
@@ -89,7 +88,7 @@ public class AdminController {
 
     // return roles
     private Collection <Role> getRoleChek () {
-        Collection <Role> roleSet = roleRepository.findAll();
+        Collection <Role> roleSet = roleService.roleCollectionGet();
         return roleSet;
     }
 
